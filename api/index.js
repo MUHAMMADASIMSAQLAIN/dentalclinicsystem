@@ -8,7 +8,7 @@ const rateLimit = require('express-rate-limit');
 const adminHTML = require('../admin.js');
 
 const app = express();
-app.use(express.json({ limit: '32kb' }));
+app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 // Disable CSP in helmet to allow inline scripts & CDNs required by the constrained single-file frontend
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false })); 
@@ -134,6 +134,30 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Protected content management APIs
+
+app.post('/api/admin/upload-image', requireAdmin, async (req, res) => {
+  try {
+    const b=req.body||{}, data=String(b.dataUrl||'');
+    const match=data.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/);
+    if(!match)return res.status(400).json({success:false,message:'Choose a JPG, PNG, WEBP or GIF image.'});
+    if(data.length>5*1024*1024)return res.status(413).json({success:false,message:'Image is too large. Please choose an image under 3.5 MB.'});
+    const db=await connectDB();
+    const image={dataUrl:data,mimeType:match[1],updatedAt:new Date()};
+    const r=await db.collection('clinicImages').insertOne(image);
+    res.json({success:true,url:'/api/images/'+r.insertedId.toString()});
+  } catch(e) { res.status(500).json({success:false,message:'Could not upload image.'}); }
+});
+app.get('/api/images/:id', async (req,res) => {
+  try {
+    if(!ObjectId.isValid(req.params.id))return res.status(404).end();
+    const db=await connectDB(), image=await db.collection('clinicImages').findOne({_id:new ObjectId(req.params.id)});
+    if(!image)return res.status(404).end();
+    const match=String(image.dataUrl||'').match(/^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/);
+    if(!match)return res.status(404).end();
+    res.set('Content-Type',match[1]);res.set('Cache-Control','public, max-age=31536000, immutable');
+    res.send(Buffer.from(match[2],'base64'));
+  } catch(e) { res.status(500).end(); }
+});
 app.get('/api/admin/dentists', requireAdmin, async (req, res) => { try { const db = await connectDB(); res.json({ success: true, data: await db.collection('dentists').find().sort({ name: 1 }).toArray() }); } catch(e) { res.status(500).json({ success: false, message: 'Could not load specialists.' }); } });
 app.post('/api/admin/dentists', requireAdmin, async (req, res) => { try { const b=req.body||{}; if(!String(b.name||'').trim()||!String(b.specialty||'').trim()) return res.status(400).json({success:false,message:'Name and specialty are required.'}); const d={name:String(b.name).trim().slice(0,120),specialty:String(b.specialty).trim().slice(0,120),qualifications:String(b.qualifications||'').slice(0,300),experience:String(b.experience||'').slice(0,100),description:String(b.description||'').slice(0,1200),imageUrl:String(b.imageUrl||'').slice(0,2000),active:b.active!==false,createdAt:new Date(),updatedAt:new Date()}; const db=await connectDB(); const r=await db.collection('dentists').insertOne(d); res.json({success:true,data:{...d,_id:r.insertedId}}); } catch(e) { res.status(500).json({success:false,message:'Could not save specialist.'}); } });
 app.put('/api/admin/dentists/:id', requireAdmin, async (req, res) => { try { if(!ObjectId.isValid(req.params.id)) return res.status(400).json({success:false,message:'Invalid ID.'}); const keys=['name','specialty','qualifications','experience','description','imageUrl','active']; const changes={updatedAt:new Date()}; for(const k of keys) if(req.body?.[k]!==undefined) changes[k]=k==='active'?Boolean(req.body[k]):String(req.body[k]).trim().slice(0,k==='description'?1200:k==='imageUrl'?2000:300); const db=await connectDB(); const r=await db.collection('dentists').updateOne({_id:new ObjectId(req.params.id)},{$set:changes}); if(!r.matchedCount)return res.status(404).json({success:false,message:'Specialist not found.'}); res.json({success:true}); } catch(e) { res.status(500).json({success:false,message:'Could not update specialist.'}); } });
