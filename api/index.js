@@ -93,18 +93,19 @@ app.get('/api/health', async (req, res) => {
         const db = await connectDB(); await db.command({ ping: 1 });
         return res.json({ success: true, status: 'Healthy', checks: { config: true, database: 'connected' } });
     } catch (error) {
+        console.error('[health] MongoDB connection failed:', error?.name || 'Error', error?.message || 'Unknown error');
         return res.status(503).json({ success: false, status: 'Degraded', checks: { config: true, database: 'disconnected' } });
     }
 });
 
 app.get('/api/services', async (req, res) => {
     try { const db = await connectDB(); const s = await db.collection('services').find({active: true}).toArray(); res.json({ success: true, data: s }); } 
-    catch (e) { res.status(500).json({ success: false, message: 'DB Error' }); }
+    catch (e) { console.error('[api/services] MongoDB query failed:', e?.name || 'Error', e?.message || 'Unknown error'); res.status(500).json({ success: false, message: 'DB Error' }); }
 });
 
 app.get('/api/dentists', async (req, res) => {
     try { const db = await connectDB(); const d = await db.collection('dentists').find({active: true}).toArray(); res.json({ success: true, data: d }); } 
-    catch (e) { res.status(500).json({ success: false, message: 'DB Error' }); }
+    catch (e) { console.error('[api/dentists] MongoDB query failed:', e?.name || 'Error', e?.message || 'Unknown error'); res.status(500).json({ success: false, message: 'DB Error' }); }
 });
 
 // Calculate availability
