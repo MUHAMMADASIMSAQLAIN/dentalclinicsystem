@@ -239,7 +239,7 @@ module.exports = `<!DOCTYPE html>
 
         async function uploadImageFile(file) {
             if(!file)return '';
-            if(!/^image\/(jpeg|png|webp|gif)$/.test(file.type)){showToast('Choose a JPG, PNG, WEBP or GIF image');throw new Error('Unsupported image type');}
+            if(!/^image\\/(jpeg|png|webp|gif)$/.test(file.type)){showToast('Choose a JPG, PNG, WEBP or GIF image');throw new Error('Unsupported image type');}
             if(file.size>3.5*1024*1024){showToast('Choose an image smaller than 3.5 MB');throw new Error('Image too large');}
             const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not read image'));reader.readAsDataURL(file);});
             const r=await api('/api/admin/upload-image',{method:'POST',body:JSON.stringify({dataUrl})});
