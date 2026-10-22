@@ -453,7 +453,7 @@ app.get('/', (req, res) => {
 
         async function init() {
             // Load Services
-            const sRes = await fetch('/api/services').then(r => r.json());
+            const sRes = await fetch('/api/services').then(r => { if (!r.ok) throw new Error('Services are temporarily unavailable. Please try again shortly.'); return r.json(); }).catch(() => ({ success: false, message: 'Services could not be loaded. Check the database connection and try again.' }));
             if (sRes.success) {
                 document.getElementById('services-grid').innerHTML = sRes.data.map(s => 
                     \`<div class="clay-card">
@@ -470,10 +470,14 @@ app.get('/', (req, res) => {
                         <div class="radio-card">\${s.name} - PKR \${s.price.toLocaleString()}</div>
                     </label>\`
                 ).join('');
+            } else {
+                const message = sRes.message || 'Services are temporarily unavailable.';
+                document.getElementById('services-grid').innerHTML = `<div class="clay-card" role="status"><h3>Services temporarily unavailable</h3><p style="margin-top:10px;">${message}</p><button class="clay-btn" style="margin-top:16px;" onclick="init()">Try again</button></div>`;
+                document.getElementById('b-services').innerHTML = `<p role="status">${message}</p>`;
             }
 
             // Load Dentists
-            const dRes = await fetch('/api/dentists').then(r => r.json());
+            const dRes = await fetch('/api/dentists').then(r => { if (!r.ok) throw new Error('Dentists are temporarily unavailable. Please try again shortly.'); return r.json(); }).catch(() => ({ success: false, message: 'Dentist information could not be loaded. Check the database connection and try again.' }));
             if (dRes.success) {
                 document.getElementById('dentists-grid').innerHTML = dRes.data.map(d => 
                     \`<div class="clay-card" style="text-align:center;">
@@ -488,6 +492,10 @@ app.get('/', (req, res) => {
                         <div class="radio-card">\${d.name} (\${d.specialty})</div>
                     </label>\`
                 ).join('');
+            } else {
+                const message = dRes.message || 'Dentist information is temporarily unavailable.';
+                document.getElementById('dentists-grid').innerHTML = `<div class="clay-card" role="status"><h3>Our specialists are temporarily unavailable</h3><p style="margin-top:10px;">${message}</p><button class="clay-btn" style="margin-top:16px;" onclick="init()">Try again</button></div>`;
+                document.getElementById('b-dentists').innerHTML = `<p role="status">${message}</p>`;
             }
             lucide.createIcons();
         }
