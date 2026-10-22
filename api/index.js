@@ -546,12 +546,12 @@ app.get('/', (req, res) => {
             if (sRes.success) {
                 document.getElementById('services-grid').innerHTML = sRes.data.map(s => 
                     \`<div class="clay-card">
-                        ${s.imageUrl ? `<img src="${escapeHtml(s.imageUrl)}" alt="${escapeHtml(s.name)}" loading="lazy" style="width:100%;height:180px;object-fit:cover;border-radius:18px;margin-bottom:15px;" onerror="this.style.display='none'">` : '<i data-lucide="activity" style="color: var(--mint); width:40px; height:40px;"></i>'}
-                        <h3 style="margin: 15px 0;">${escapeHtml(s.name)}</h3>
-                        <p>${escapeHtml(s.description)}</p>
-                        <p style="font-weight: bold; margin-top: 15px; color: var(--primary);">PKR ${Number(s.price||0).toLocaleString()}</p>
-                        <p style="margin-top:6px;">${Number(s.duration||30)} minutes</p>
-                        <button class="clay-btn" style="margin-top: 15px; width: 100%;" onclick="openBooking('${s._id}')">Book This</button>
+                        \${s.imageUrl ? \`<img src="\${escapeHtml(s.imageUrl)}" alt="\${escapeHtml(s.name)}" loading="lazy" style="width:100%;height:180px;object-fit:cover;border-radius:18px;margin-bottom:15px;" onerror="this.style.display='none'">\` : '<i data-lucide="activity" style="color: var(--mint); width:40px; height:40px;"></i>'}
+                        <h3 style="margin: 15px 0;">\${escapeHtml(s.name)}</h3>
+                        <p>\${escapeHtml(s.description)}</p>
+                        <p style="font-weight: bold; margin-top: 15px; color: var(--primary);">PKR \${Number(s.price||0).toLocaleString()}</p>
+                        <p style="margin-top:6px;">\${Number(s.duration||30)} minutes</p>
+                        <button class="clay-btn" style="margin-top: 15px; width: 100%;" onclick="openBooking('\${s._id}')">Book This</button>
                     </div>\`
                 ).join('');
                 document.getElementById('b-services').innerHTML = sRes.data.map(s => 
@@ -571,12 +571,12 @@ app.get('/', (req, res) => {
             if (dRes.success) {
                 document.getElementById('dentists-grid').innerHTML = dRes.data.map(d => 
                     \`<div class="clay-card" style="text-align:center;">
-                        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" alt="${escapeHtml(d.name)}" loading="lazy" style="width:120px;height:120px;object-fit:cover;border-radius:50%;margin:0 auto 15px;" onerror="this.style.display='none'">` : '<div style="width:100px;height:100px;background:var(--primary);border-radius:50%;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;color:white;"><i data-lucide="user" style="width:50px;height:50px;"></i></div>'}
-                        <h3>${escapeHtml(d.name)}</h3>
-                        <p style="color: var(--mint); font-weight: 500;">${escapeHtml(d.specialty)}</p>
-                        ${d.qualifications ? `<p>${escapeHtml(d.qualifications)}</p>` : ''}
-                        ${d.experience ? `<p>${escapeHtml(d.experience)}</p>` : ''}
-                        ${d.description ? `<p style="margin-top:10px;">${escapeHtml(d.description)}</p>` : ''}
+                        \${d.imageUrl ? \`<img src="\${escapeHtml(d.imageUrl)}" alt="\${escapeHtml(d.name)}" loading="lazy" style="width:120px;height:120px;object-fit:cover;border-radius:50%;margin:0 auto 15px;" onerror="this.style.display='none'">\` : '<div style="width:100px;height:100px;background:var(--primary);border-radius:50%;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;color:white;"><i data-lucide="user" style="width:50px;height:50px;"></i></div>'}
+                        <h3>\${escapeHtml(d.name)}</h3>
+                        <p style="color: var(--mint); font-weight: 500;">\${escapeHtml(d.specialty)}</p>
+                        \${d.qualifications ? \`<p>\${escapeHtml(d.qualifications)}</p>\` : ''}
+                        \${d.experience ? \`<p>\${escapeHtml(d.experience)}</p>\` : ''}
+                        \${d.description ? \`<p style="margin-top:10px;">\${escapeHtml(d.description)}</p>\` : ''}
                     </div>\`
                 ).join('');
                 document.getElementById('b-dentists').innerHTML = dRes.data.map(d => 
