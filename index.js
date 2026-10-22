@@ -108,7 +108,7 @@ app.get('/api/availability', async (req, res) => {
         const booked = await db.collection('appointments').find({
             dentistId: new ObjectId(dentistId),
             status: { $in: ['pending', 'confirmed'] },
-            startTime: { $gte: startOfDay, $lte: endOfDay }
+            startTime: { $gte: startOfDay,$lte: endOfDay }
         }).toArray();
         
         const bookedTimes = booked.map(b => {
@@ -537,6 +537,6 @@ app.get('/', (req, res) => {
 // Vercel Serverless Export / Local Fallback
 if (require.main === module) {
     const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => console.log(\`SmileCraft Server running on port \${PORT}\`));
+    app.listen(PORT, () => console.log(`SmileCraft Server running on port ${PORT}`));
 }
 module.exports = app;
