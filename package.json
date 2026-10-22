@@ -2,13 +2,13 @@
   "name": "smilecraft-dental-booking",
   "version": "1.0.0",
   "description": "Premium Dental Clinic Online Appointment Booking System",
-  "main": "api/index.js",
+  "main": "index.js",
   "engines": {
     "node": "24.x"
   },
   "scripts": {
-    "start": "node api/index.js",
-    "dev": "node api/index.js"
+    "start": "node index.js",
+    "dev": "node index.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
