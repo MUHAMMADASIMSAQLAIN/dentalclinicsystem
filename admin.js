@@ -62,6 +62,7 @@ module.exports = `<!DOCTYPE html>
         <div class="sidebar-item" data-target="specialists"><i data-lucide="stethoscope"></i> Specialists</div>
         <div class="sidebar-item" data-target="services"><i data-lucide="sparkles"></i> Premium Services</div>
         <div class="sidebar-item" data-target="settings"><i data-lucide="settings"></i> Settings</div>
+        <div class="sidebar-item" data-target="password-settings"><i data-lucide="key-round"></i> Change Password</div>
         <div style="flex:1;"></div>
         <div class="sidebar-item" id="logout-btn" style="color: var(--coral);"><i data-lucide="log-out"></i> Logout</div>
     </div>
@@ -133,6 +134,21 @@ module.exports = `<!DOCTYPE html>
                     <input class="clay-input" id="setting-email" type="email" placeholder="Email">
                     <input class="clay-input" id="setting-hours" placeholder="Opening hours"></div>
                     <button class="clay-btn" type="submit">Save clinic information</button>
+                </form>
+            </div>
+        </div>
+        <div id="password-settings" class="view hidden">
+            <h1 style="margin-bottom:20px;">Change Admin Password</h1>
+            <div class="clay-card" style="max-width:650px;">
+                <p style="margin-bottom:18px;line-height:1.6;">Update your admin login password. Use at least 12 characters and choose a password you do not use on other websites. You will need to log in again after changing it.</p>
+                <form id="password-form" autocomplete="off">
+                    <label for="current-admin-password">Current password</label>
+                    <input class="clay-input" id="current-admin-password" type="password" autocomplete="current-password" required>
+                    <label for="new-admin-password">New password (12–128 characters)</label>
+                    <input class="clay-input" id="new-admin-password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+                    <label for="confirm-admin-password">Confirm new password</label>
+                    <input class="clay-input" id="confirm-admin-password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+                    <button class="clay-btn" type="submit">Update password</button>
                 </form>
             </div>
         </div>
@@ -271,6 +287,22 @@ module.exports = `<!DOCTYPE html>
         window.deleteService=async id=>{if(!confirm('Delete this service?'))return;const r=await api('/api/admin/services/'+id,{method:'DELETE'});if(r?.success){showToast('Service deleted');loadServices();}else showToast('Could not delete service');};
         async function loadSettings(){const r=await api('/api/admin/settings');if(!r||!r.success)return showToast(r?.message||'Could not load settings');const s=r.data||{};[['setting-name','clinicName'],['setting-logo','logoUrl'],['setting-about','about'],['setting-address','address'],['setting-phone','phone'],['setting-email','email'],['setting-hours','hours']].forEach(([el,k])=>document.getElementById(el).value=s[k]||'');}
         document.getElementById('settings-form').onsubmit=async e=>{e.preventDefault();const body={clinicName:document.getElementById('setting-name').value,logoUrl:await getImageValue('setting-logo-file','setting-logo'),about:document.getElementById('setting-about').value,address:document.getElementById('setting-address').value,phone:document.getElementById('setting-phone').value,email:document.getElementById('setting-email').value,hours:document.getElementById('setting-hours').value};const r=await api('/api/admin/settings',{method:'PUT',body:JSON.stringify(body)});if(r?.success)showToast('Clinic information saved');else showToast(r?.message||'Could not save settings');};
+
+        document.getElementById('password-form').onsubmit=async e=>{
+            e.preventDefault();
+            const currentPassword=document.getElementById('current-admin-password').value;
+            const newPassword=document.getElementById('new-admin-password').value;
+            const confirmPassword=document.getElementById('confirm-admin-password').value;
+            if(newPassword!==confirmPassword){showToast('New passwords do not match');return;}
+            const button=e.submitter;
+            if(button){button.disabled=true;button.textContent='Updating...';}
+            try {
+                const r=await api('/api/admin/password',{method:'POST',body:JSON.stringify({currentPassword,newPassword,confirmPassword})});
+                if(r?.success){e.target.reset();showToast(r.message||'Password updated. Please log in again.');setTimeout(()=>window.location.reload(),1200);}
+                else showToast(r?.message||'Could not update password');
+            } catch(err){showToast('Could not update password. Please try again.');}
+            finally {if(button){button.disabled=false;button.textContent='Update password';}}
+        };
 
         // Init
         initDash();
