@@ -472,8 +472,8 @@ app.get('/', (req, res) => {
                 ).join('');
             } else {
                 const message = sRes.message || 'Services are temporarily unavailable.';
-                document.getElementById('services-grid').innerHTML = `<div class="clay-card" role="status"><h3>Services temporarily unavailable</h3><p style="margin-top:10px;">${message}</p><button class="clay-btn" style="margin-top:16px;" onclick="init()">Try again</button></div>`;
-                document.getElementById('b-services').innerHTML = `<p role="status">${message}</p>`;
+                document.getElementById('services-grid').innerHTML = \`<div class="clay-card" role="status"><h3>Services temporarily unavailable</h3><p style="margin-top:10px;">\${message}</p><button class="clay-btn" style="margin-top:16px;" onclick="init()">Try again</button></div>\`;
+                document.getElementById('b-services').innerHTML = \`<p role="status">\${message}</p>\`;
             }
 
             // Load Dentists
@@ -494,8 +494,8 @@ app.get('/', (req, res) => {
                 ).join('');
             } else {
                 const message = dRes.message || 'Dentist information is temporarily unavailable.';
-                document.getElementById('dentists-grid').innerHTML = `<div class="clay-card" role="status"><h3>Our specialists are temporarily unavailable</h3><p style="margin-top:10px;">${message}</p><button class="clay-btn" style="margin-top:16px;" onclick="init()">Try again</button></div>`;
-                document.getElementById('b-dentists').innerHTML = `<p role="status">${message}</p>`;
+                document.getElementById('dentists-grid').innerHTML = \`<div class="clay-card" role="status"><h3>Our specialists are temporarily unavailable</h3><p style="margin-top:10px;">\${message}</p><button class="clay-btn" style="margin-top:16px;" onclick="init()">Try again</button></div>\`;
+                document.getElementById('b-dentists').innerHTML = \`<p role="status">\${message}</p>\`;
             }
             lucide.createIcons();
         }
