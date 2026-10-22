@@ -78,7 +78,13 @@ const requireAdmin = async (req, res, next) => {
         const token = req.cookies.admin_token;
         if (!token) return res.status(401).json({ success: false, message: 'Unauthorized' });
         const decoded = jwt.verify(token, jwtSecret);
-        req.adminId = decoded.adminId;
+        const db = await connectDB();
+        const admin = await db.collection('admins').findOne({ _id: new ObjectId(decoded.adminId), active: true });
+        if (!admin || (admin.passwordChangedAt && decoded.iat * 1000 < new Date(admin.passwordChangedAt).getTime())) {
+            res.clearCookie('admin_token');
+            return res.status(401).json({ success: false, message: 'Session expired. Please log in again.' });
+        }
+        req.adminId = admin._id;
         next();
     } catch (err) { res.status(401).json({ success: false, message: 'Invalid session' }); }
 };
@@ -277,6 +283,29 @@ app.post('/api/admin/login', async (req, res) => {
         res.cookie('admin_token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict' });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false, message: 'Server error' }); }
+});
+
+app.post('/api/admin/password', requireAdmin, async (req, res) => {
+    try {
+        const { currentPassword, newPassword, confirmPassword } = req.body || {};
+        if (typeof currentPassword !== 'string' || !currentPassword || typeof newPassword !== 'string' || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Enter your current password and a new password.' });
+        }
+        if (newPassword.length < 12 || newPassword.length > 128) {
+            return res.status(400).json({ success: false, message: 'New password must be between 12 and 128 characters.' });
+        }
+        if (newPassword !== confirmPassword) return res.status(400).json({ success: false, message: 'New password and confirmation do not match.' });
+        if (currentPassword === newPassword) return res.status(400).json({ success: false, message: 'Choose a password different from your current password.' });
+        const db = await connectDB();
+        const admin = await db.collection('admins').findOne({ _id: new ObjectId(req.adminId), active: true });
+        if (!admin || !(await bcrypt.compare(currentPassword, admin.password))) {
+            return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+        }
+        const password = await bcrypt.hash(newPassword, 12);
+        await db.collection('admins').updateOne({ _id: admin._id }, { $set: { password, passwordChangedAt: new Date(), updatedAt: new Date() } });
+        res.clearCookie('admin_token');
+        return res.json({ success: true, message: 'Password updated. Please log in with your new password.' });
+    } catch (e) { res.status(500).json({ success: false, message: 'Could not update password.' }); }
 });
 
 app.post('/api/admin/logout', (req, res) => {
