@@ -372,7 +372,7 @@ app.get('/', (req, res) => {
 <body>
 
     <nav>
-        <div class="logo"><i data-lucide="smile" style="color: var(--primary);"></i> SmileCraft</div>
+        <div class="logo" id="clinic-brand"><i data-lucide="smile" style="color: var(--primary);"></i> <span id="clinic-brand-name">SmileCraft Dental Studio</span></div>
         <div class="nav-links">
             <a href="#services">Services</a>
             <a href="#dentists">Our Dentists</a>
@@ -409,6 +409,30 @@ app.get('/', (req, res) => {
             <!-- Populated via API -->
         </div>
     </section>
+
+    <section id="about" style="background:var(--bg);">
+        <h2 class="section-title">About Our Clinic</h2>
+        <div class="clay-card" style="max-width:900px;margin:0 auto;text-align:center;">
+            <p id="clinic-about-text">Compassionate, modern dental care for the whole family.</p>
+        </div>
+    </section>
+    <section id="contact" style="background:var(--white);">
+        <h2 class="section-title">Contact Our Clinic</h2>
+        <div class="grid" style="max-width:1000px;margin:0 auto;">
+            <div class="clay-card"><h3>Visit us</h3><p id="clinic-address">Bahria Town Phase 8, Rawalpindi, Pakistan</p></div>
+            <div class="clay-card"><h3>Call or email</h3><p id="clinic-phone">Phone: Please contact us</p><p id="clinic-email">Email: Please contact us</p></div>
+            <div class="clay-card"><h3>Opening hours</h3><p id="clinic-hours">Monday-Saturday, 9:00 AM-8:00 PM</p></div>
+        </div>
+    </section>
+
+    <div id="clinic-chat" style="position:fixed;right:20px;bottom:20px;z-index:900;display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+        <div id="clinic-chat-panel" class="clay-card" style="display:none;width:min(350px,calc(100vw - 40px));height:420px;margin:0;padding:16px;box-shadow:0 8px 30px #0002;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><strong>Clinic Assistant</strong><button type="button" id="chat-close" aria-label="Close chat" style="border:0;background:transparent;font-size:22px;cursor:pointer;">×</button></div>
+            <div id="clinic-chat-messages" role="log" aria-live="polite" style="height:300px;overflow-y:auto;background:#f7f7fb;border-radius:12px;padding:10px;font-size:14px;"><p>Hi! Ask me about services, specialists, hours, location, or appointments.</p></div>
+            <form id="clinic-chat-form" style="display:flex;gap:8px;margin-top:10px;"><input id="clinic-chat-input" aria-label="Message" class="clay-input" style="margin:0;min-width:0;" maxlength="500" placeholder="Type your question..." required><button class="clay-btn" type="submit">Send</button></form>
+        </div>
+        <button type="button" id="chat-open" class="clay-btn" style="box-shadow:0 4px 20px #0002;">Chat with us</button>
+    </div>
 
     <!-- Booking Modal -->
     <div id="booking-modal">
@@ -473,13 +497,40 @@ app.get('/', (req, res) => {
     </div>
 
     <footer>
-        <h2>SmileCraft Dental Studio</h2>
-        <p>Bahria Town Phase 8, Rawalpindi, Pakistan</p>
-        <p style="margin-top: 20px; opacity: 0.6;">© 2026 SmileCraft. Demo Project.</p>
+        <h2 id="footer-clinic-name">SmileCraft Dental Studio</h2>
+        <p id="footer-clinic-address">Bahria Town Phase 8, Rawalpindi, Pakistan</p>
+        <p style="margin-top:20px;opacity:.6;">© 2026 <span id="footer-copyright-name">SmileCraft Dental Studio</span></p>
     </footer>
 
     <script>
         lucide.createIcons();
+
+        const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        async function loadClinicSettings() {
+            try {
+                const r=await fetch('/api/settings').then(x=>x.json()); if(!r.success)return;
+                const c=r.data||{}, name=c.clinicName||'SmileCraft Dental Studio';
+                document.title=name+' | Dental Clinic';
+                document.getElementById('clinic-brand-name').textContent=name;
+                document.getElementById('footer-clinic-name').textContent=name;
+                document.getElementById('footer-copyright-name').textContent=name;
+                if(c.logoUrl) document.getElementById('clinic-brand').innerHTML='<img src="'+escapeHtml(c.logoUrl)+'" alt="" style="height:38px;max-width:140px;object-fit:contain;" onerror="this.remove()"> <span id="clinic-brand-name">'+escapeHtml(name)+'</span>';
+                document.getElementById('clinic-about-text').textContent=c.about||'Compassionate, modern dental care for the whole family.';
+                document.getElementById('clinic-address').textContent=c.address||'Bahria Town Phase 8, Rawalpindi, Pakistan';
+                document.getElementById('footer-clinic-address').textContent=c.address||'Bahria Town Phase 8, Rawalpindi, Pakistan';
+                document.getElementById('clinic-phone').textContent='Phone: '+(c.phone||'Please contact us');
+                document.getElementById('clinic-email').textContent='Email: '+(c.email||'Please contact us');
+                document.getElementById('clinic-hours').textContent=c.hours||'Monday-Saturday, 9:00 AM-8:00 PM';
+            } catch(e) { console.warn('Clinic settings unavailable'); }
+        }
+        function addChatMessage(text, who) {
+            const box=document.getElementById('clinic-chat-messages'), p=document.createElement('p');
+            p.textContent=text; p.style.cssText='padding:8px 10px;margin:6px 0;border-radius:10px;white-space:pre-wrap;overflow-wrap:anywhere;'+(who==='user'?'background:#e8e5ff;text-align:right;':'background:white;text-align:left;');
+            box.appendChild(p); box.scrollTop=box.scrollHeight;
+        }
+        document.getElementById('chat-open').onclick=()=>{document.getElementById('clinic-chat-panel').style.display='block';document.getElementById('chat-open').style.display='none';document.getElementById('clinic-chat-input').focus();};
+        document.getElementById('chat-close').onclick=()=>{document.getElementById('clinic-chat-panel').style.display='none';document.getElementById('chat-open').style.display='inline-block';};
+        document.getElementById('clinic-chat-form').onsubmit=async e=>{e.preventDefault();const input=document.getElementById('clinic-chat-input'), message=input.value.trim();if(!message)return;addChatMessage(message,'user');input.value='';try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message})}).then(x=>x.json());addChatMessage(r.reply||r.message||'Sorry, chat is temporarily unavailable.','bot');}catch(err){addChatMessage('Sorry, chat is temporarily unavailable. Please contact the clinic directly.','bot');}};
 
         // Set min date for date picker
         const today = new Date().toISOString().split('T')[0];
@@ -495,11 +546,12 @@ app.get('/', (req, res) => {
             if (sRes.success) {
                 document.getElementById('services-grid').innerHTML = sRes.data.map(s => 
                     \`<div class="clay-card">
-                        <i data-lucide="activity" style="color: var(--mint); width:40px; height:40px;"></i>
-                        <h3 style="margin: 15px 0;">\${s.name}</h3>
-                        <p>\${s.description}</p>
-                        <p style="font-weight: bold; margin-top: 15px; color: var(--primary);">PKR \${s.price.toLocaleString()}</p>
-                        <button class="clay-btn" style="margin-top: 15px; width: 100%;" onclick="openBooking('\${s._id}')">Book This</button>
+                        ${s.imageUrl ? `<img src="${escapeHtml(s.imageUrl)}" alt="${escapeHtml(s.name)}" loading="lazy" style="width:100%;height:180px;object-fit:cover;border-radius:18px;margin-bottom:15px;" onerror="this.style.display='none'">` : '<i data-lucide="activity" style="color: var(--mint); width:40px; height:40px;"></i>'}
+                        <h3 style="margin: 15px 0;">${escapeHtml(s.name)}</h3>
+                        <p>${escapeHtml(s.description)}</p>
+                        <p style="font-weight: bold; margin-top: 15px; color: var(--primary);">PKR ${Number(s.price||0).toLocaleString()}</p>
+                        <p style="margin-top:6px;">${Number(s.duration||30)} minutes</p>
+                        <button class="clay-btn" style="margin-top: 15px; width: 100%;" onclick="openBooking('${s._id}')">Book This</button>
                     </div>\`
                 ).join('');
                 document.getElementById('b-services').innerHTML = sRes.data.map(s => 
@@ -519,9 +571,12 @@ app.get('/', (req, res) => {
             if (dRes.success) {
                 document.getElementById('dentists-grid').innerHTML = dRes.data.map(d => 
                     \`<div class="clay-card" style="text-align:center;">
-                        <div style="width:100px; height:100px; background:var(--primary); border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; color:white;"><i data-lucide="user" style="width:50px; height:50px;"></i></div>
-                        <h3>\${d.name}</h3>
-                        <p style="color: var(--mint); font-weight: 500;">\${d.specialty}</p>
+                        ${d.imageUrl ? `<img src="${escapeHtml(d.imageUrl)}" alt="${escapeHtml(d.name)}" loading="lazy" style="width:120px;height:120px;object-fit:cover;border-radius:50%;margin:0 auto 15px;" onerror="this.style.display='none'">` : '<div style="width:100px;height:100px;background:var(--primary);border-radius:50%;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;color:white;"><i data-lucide="user" style="width:50px;height:50px;"></i></div>'}
+                        <h3>${escapeHtml(d.name)}</h3>
+                        <p style="color: var(--mint); font-weight: 500;">${escapeHtml(d.specialty)}</p>
+                        ${d.qualifications ? `<p>${escapeHtml(d.qualifications)}</p>` : ''}
+                        ${d.experience ? `<p>${escapeHtml(d.experience)}</p>` : ''}
+                        ${d.description ? `<p style="margin-top:10px;">${escapeHtml(d.description)}</p>` : ''}
                     </div>\`
                 ).join('');
                 document.getElementById('b-dentists').innerHTML = dRes.data.map(d => 
@@ -606,6 +661,7 @@ app.get('/', (req, res) => {
             } else { alert(res.message || 'Error occurred'); }
         };
 
+        loadClinicSettings();
         init();
     </script>
 </body>
