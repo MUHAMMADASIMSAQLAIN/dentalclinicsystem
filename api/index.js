@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const adminHTML = require('../admin.js');
 
 const app = express();
 app.use(express.json({ limit: '32kb' }));
