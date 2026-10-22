@@ -28,6 +28,12 @@ module.exports = `<!DOCTYPE html>
         .badge.confirmed { background: var(--mint); color: #0a4f32; }
         .badge.pending { background: #ffe4b5; color: #8a6a1c; }
         .badge.cancelled { background: var(--coral); color: #7a1528; }
+        .management-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:16px 0; }
+        .manage-item { display:flex; gap:14px; align-items:center; padding:12px 0; border-bottom:1px solid #eee; }
+        .manage-item img { width:64px; height:64px; object-fit:cover; border-radius:12px; background:#f4f5f7; }
+        .manage-item .item-copy { flex:1; min-width:0; }
+        .manage-item .item-actions { display:flex; gap:8px; flex-wrap:wrap; }
+        .clay-btn.secondary { background:#fff; color:var(--text); border:1px solid #ddd; box-shadow:none; }
         .toast { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: 0.3s; z-index: 2000; }
     </style>
 </head>
@@ -53,6 +59,8 @@ module.exports = `<!DOCTYPE html>
         <div class="sidebar-item active" data-target="dash"><i data-lucide="layout-dashboard"></i> Dashboard</div>
         <div class="sidebar-item" data-target="appts"><i data-lucide="calendar"></i> Appointments</div>
         <div class="sidebar-item" data-target="patients"><i data-lucide="users"></i> Patients</div>
+        <div class="sidebar-item" data-target="specialists"><i data-lucide="stethoscope"></i> Specialists</div>
+        <div class="sidebar-item" data-target="services"><i data-lucide="sparkles"></i> Premium Services</div>
         <div class="sidebar-item" data-target="settings"><i data-lucide="settings"></i> Settings</div>
         <div style="flex:1;"></div>
         <div class="sidebar-item" id="logout-btn" style="color: var(--coral);"><i data-lucide="log-out"></i> Logout</div>
@@ -82,10 +90,50 @@ module.exports = `<!DOCTYPE html>
             <h1 style="margin-bottom: 20px;">Patients Directory</h1>
             <div class="clay-card"><table id="patients-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th></tr></thead><tbody id="patients-tbody"></tbody></table></div>
         </div>
-        <div id="settings" class="view hidden">
-            <h1 style="margin-bottom: 20px;">Clinic Settings</h1>
+        <div id="specialists" class="view hidden">
+            <h1 style="margin-bottom:20px;">Manage Specialists</h1>
             <div class="clay-card">
-                <p>System configuration goes here. (Connected to /api/admin/settings)</p>
+                <h3 id="dentist-form-title">Add a specialist</h3>
+                <form id="dentist-form"><input type="hidden" id="dentist-id">
+                    <div class="management-form">
+                        <input class="clay-input" id="dentist-name" placeholder="Full name *" required>
+                        <input class="clay-input" id="dentist-specialty" placeholder="Specialty *" required>
+                        <input class="clay-input" id="dentist-qualifications" placeholder="Qualifications">
+                        <input class="clay-input" id="dentist-experience" placeholder="Experience">
+                        <input class="clay-input" id="dentist-image" placeholder="Photo URL (https://...)">
+                        <textarea class="clay-input" id="dentist-description" placeholder="Biography"></textarea>
+                    </div><button class="clay-btn" type="submit">Save specialist</button>
+                    <button class="clay-btn secondary" type="button" onclick="resetDentistForm()">Clear</button>
+                </form>
+            </div><div class="clay-card"><h3>Current specialists</h3><div id="dentist-list">Loading...</div></div>
+        </div>
+        <div id="services" class="view hidden">
+            <h1 style="margin-bottom:20px;">Manage Premium Services</h1>
+            <div class="clay-card"><h3 id="service-form-title">Add a service</h3>
+                <form id="service-form"><input type="hidden" id="service-id">
+                    <div class="management-form">
+                        <input class="clay-input" id="service-name" placeholder="Service name *" required>
+                        <input class="clay-input" id="service-price" type="number" min="0" step="1" placeholder="Price (PKR) *" required>
+                        <input class="clay-input" id="service-duration" type="number" min="1" step="1" placeholder="Duration (minutes) *" required>
+                        <input class="clay-input" id="service-image" placeholder="Image URL (https://...)">
+                        <textarea class="clay-input" id="service-description" placeholder="Service information"></textarea>
+                    </div><button class="clay-btn" type="submit">Save service</button>
+                    <button class="clay-btn secondary" type="button" onclick="resetServiceForm()">Clear</button>
+                </form>
+            </div><div class="clay-card"><h3>Current services</h3><div id="service-list">Loading...</div></div>
+        </div>
+        <div id="settings" class="view hidden">
+            <h1 style="margin-bottom:20px;">Clinic Settings</h1><div class="clay-card">
+                <form id="settings-form">
+                    <label>Clinic name</label><input class="clay-input" id="setting-name" required>
+                    <label>Logo image URL</label><input class="clay-input" id="setting-logo" placeholder="https://...">
+                    <label>About the clinic</label><textarea class="clay-input" id="setting-about"></textarea>
+                    <label>Address</label><input class="clay-input" id="setting-address">
+                    <div class="management-form"><input class="clay-input" id="setting-phone" placeholder="Phone">
+                    <input class="clay-input" id="setting-email" type="email" placeholder="Email">
+                    <input class="clay-input" id="setting-hours" placeholder="Opening hours"></div>
+                    <button class="clay-btn" type="submit">Save clinic information</button>
+                </form>
             </div>
         </div>
     </div>
@@ -123,6 +171,9 @@ module.exports = `<!DOCTYPE html>
                 document.getElementById(el.dataset.target).classList.remove('hidden');
                 if (el.dataset.target === 'appts') loadAppts();
                 if (el.dataset.target === 'patients') loadPatients();
+                if (el.dataset.target === 'specialists') loadDentists();
+                if (el.dataset.target === 'services') loadServices();
+                if (el.dataset.target === 'settings') loadSettings();
             };
         });
 
@@ -183,6 +234,25 @@ module.exports = `<!DOCTYPE html>
             const res = await api(\`/api/admin/appointments/\${id}/status\`, { method: 'PATCH', body: JSON.stringify({ status }) });
             if (res && res.success) { showToast('Status updated'); loadAppts(); initDash(); }
         };
+
+
+        const safeText = value => String(value || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        async function loadDentists() {
+            const r=await api('/api/admin/dentists'); if(!r||!r.success)return showToast(r?.message||'Could not load specialists');
+            window.dentistData=r.data;
+            document.getElementById('dentist-list').innerHTML=r.data.map(d=>`<div class="manage-item"><img src="${safeText(d.imageUrl||'')}" alt="" onerror="this.style.visibility='hidden'"><div class="item-copy"><strong>${safeText(d.name)}</strong><p>${safeText(d.specialty)} · ${safeText(d.experience)}</p><small>${safeText(d.qualifications)}</small><p>${d.active?'Visible on website':'Hidden on website'}</p></div><div class="item-actions"><button class="clay-btn secondary" onclick="editDentist('${d._id}')">Edit</button><button class="clay-btn secondary" onclick="deleteDentist('${d._id}')">Delete</button></div></div>`).join('')||'<p>No specialists yet.</p>';
+        }
+        window.editDentist=id=>{const d=window.dentistData.find(x=>x._id===id);if(!d)return;[['dentist-id','_id'],['dentist-name','name'],['dentist-specialty','specialty'],['dentist-qualifications','qualifications'],['dentist-experience','experience'],['dentist-image','imageUrl'],['dentist-description','description']].forEach(([el,k])=>document.getElementById(el).value=d[k]||'');document.getElementById('dentist-form-title').innerText='Edit specialist';window.scrollTo({top:0,behavior:'smooth'});};
+        window.resetDentistForm=()=>{document.getElementById('dentist-form').reset();document.getElementById('dentist-id').value='';document.getElementById('dentist-form-title').innerText='Add a specialist';};
+        document.getElementById('dentist-form').onsubmit=async e=>{e.preventDefault();const id=document.getElementById('dentist-id').value;const body={name:document.getElementById('dentist-name').value,specialty:document.getElementById('dentist-specialty').value,qualifications:document.getElementById('dentist-qualifications').value,experience:document.getElementById('dentist-experience').value,imageUrl:document.getElementById('dentist-image').value,description:document.getElementById('dentist-description').value};const r=await api(id?'/api/admin/dentists/'+id:'/api/admin/dentists',{method:id?'PUT':'POST',body:JSON.stringify(body)});if(r?.success){showToast('Specialist saved');resetDentistForm();loadDentists();}else showToast(r?.message||'Could not save specialist');};
+        window.deleteDentist=async id=>{if(!confirm('Delete this specialist?'))return;const r=await api('/api/admin/dentists/'+id,{method:'DELETE'});if(r?.success){showToast('Specialist deleted');loadDentists();}else showToast('Could not delete specialist');};
+        async function loadServices(){const r=await api('/api/admin/services');if(!r||!r.success)return showToast(r?.message||'Could not load services');window.serviceData=r.data;document.getElementById('service-list').innerHTML=r.data.map(s=>`<div class="manage-item"><img src="${safeText(s.imageUrl||'')}" alt="" onerror="this.style.visibility='hidden'"><div class="item-copy"><strong>${safeText(s.name)}</strong><p>PKR ${Number(s.price||0).toLocaleString()} · ${Number(s.duration||0)} minutes</p><p>${safeText(s.description)}</p><small>${s.active?'Visible on website':'Hidden on website'}</small></div><div class="item-actions"><button class="clay-btn secondary" onclick="editService('${s._id}')">Edit</button><button class="clay-btn secondary" onclick="deleteService('${s._id}')">Delete</button></div></div>`).join('')||'<p>No services yet.</p>'; }
+        window.editService=id=>{const s=window.serviceData.find(x=>x._id===id);if(!s)return;[['service-id','_id'],['service-name','name'],['service-price','price'],['service-duration','duration'],['service-image','imageUrl'],['service-description','description']].forEach(([el,k])=>document.getElementById(el).value=s[k]??'');document.getElementById('service-form-title').innerText='Edit service';window.scrollTo({top:0,behavior:'smooth'});};
+        window.resetServiceForm=()=>{document.getElementById('service-form').reset();document.getElementById('service-id').value='';document.getElementById('service-form-title').innerText='Add a service';};
+        document.getElementById('service-form').onsubmit=async e=>{e.preventDefault();const id=document.getElementById('service-id').value;const body={name:document.getElementById('service-name').value,price:Number(document.getElementById('service-price').value),duration:Number(document.getElementById('service-duration').value),imageUrl:document.getElementById('service-image').value,description:document.getElementById('service-description').value};const r=await api(id?'/api/admin/services/'+id:'/api/admin/services',{method:id?'PUT':'POST',body:JSON.stringify(body)});if(r?.success){showToast('Service saved');resetServiceForm();loadServices();}else showToast(r?.message||'Could not save service');};
+        window.deleteService=async id=>{if(!confirm('Delete this service?'))return;const r=await api('/api/admin/services/'+id,{method:'DELETE'});if(r?.success){showToast('Service deleted');loadServices();}else showToast('Could not delete service');};
+        async function loadSettings(){const r=await api('/api/admin/settings');if(!r||!r.success)return showToast(r?.message||'Could not load settings');const s=r.data||{};[['setting-name','clinicName'],['setting-logo','logoUrl'],['setting-about','about'],['setting-address','address'],['setting-phone','phone'],['setting-email','email'],['setting-hours','hours']].forEach(([el,k])=>document.getElementById(el).value=s[k]||'');}
+        document.getElementById('settings-form').onsubmit=async e=>{e.preventDefault();const body={clinicName:document.getElementById('setting-name').value,logoUrl:document.getElementById('setting-logo').value,about:document.getElementById('setting-about').value,address:document.getElementById('setting-address').value,phone:document.getElementById('setting-phone').value,email:document.getElementById('setting-email').value,hours:document.getElementById('setting-hours').value};const r=await api('/api/admin/settings',{method:'PUT',body:JSON.stringify(body)});if(r?.success)showToast('Clinic information saved');else showToast(r?.message||'Could not save settings');};
 
         // Init
         initDash();
